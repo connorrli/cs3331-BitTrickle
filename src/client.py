@@ -25,7 +25,6 @@ class PrintLogging:
         print("Wrong number of args given, try again!")
             
 def main():
-    print(server_port)
     client_server_socket: socket = ClientHandler.connect_to_server(server_port)
 
     print(f"Welcome to BitTrickle!\nAvailable commands are: get, lap, lpf, pub, sch, unp, xit")
@@ -38,7 +37,7 @@ def main():
             print(e)
             continue
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
 
 

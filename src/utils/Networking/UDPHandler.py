@@ -35,13 +35,15 @@ class UDPPacket:
     UDP_SRC_IP_SIZE = 4
 
     # Total header size
-    UDP_TOTAL_HEADER_SIZE = UDP_SRC_PORT_SIZE
-    + UDP_DST_PORT_SIZE
-    + UDP_LENGTH_SIZE
-    + UDP_CHECKSUM_SIZE
-    + UDP_MESSAGE_TYPE_SIZE 
-    + UDP_PAYLOAD_SIZE_SIZE
-    + UDP_SRC_IP_SIZE
+    UDP_TOTAL_HEADER_SIZE = (
+        UDP_SRC_PORT_SIZE + 
+        UDP_DST_PORT_SIZE + 
+        UDP_LENGTH_SIZE + 
+        UDP_CHECKSUM_SIZE + 
+        UDP_MESSAGE_TYPE_SIZE + 
+        UDP_PAYLOAD_SIZE_SIZE + 
+        UDP_SRC_IP_SIZE
+    )
 
 class UDPPacketHandling:
     @staticmethod
@@ -55,12 +57,14 @@ class UDPPacketHandling:
 
         # Structure: 2 bytes (H = short) per field in struct
         header_no_checksum = struct.pack(
-            "!HHHHHHH", src_port, dst_port, length, 0, message_type, len(payload), socket.inet_aton(src_ip)
+            "!HHHHHH4s", src_port, dst_port, length, 0, message_type, len(payload), socket.inet_aton(src_ip)
         )
 
         checksum: int = UDPPacketHandling.get_checksum(src_ip, dst_ip, header_no_checksum + payload)
 
-        header_with_checksum = struct.pack("!HHHHHHH", src_port, dst_port, length, checksum, message_type, len(payload))
+        header_with_checksum = struct.pack(
+            "!HHHHHH4s", src_port, dst_port, length, checksum, message_type, len(payload), socket.inet_aton(src_ip)
+        )
 
         return header_with_checksum + payload
     
@@ -123,6 +127,12 @@ class UDPPacketHandling:
         ))
     
     @staticmethod
+    def get_source_port(packet: bytes) -> int:
+        return UDPPacketHandling._get_field_value(
+            packet, UDPPacket.UDP_SRC_PORT_OFFSET, UDPPacket.UDP_SRC_PORT_SIZE
+        )
+    
+    @staticmethod
     def get_payload(packet: bytes) -> bytes:
         payload_size = UDPPacketHandling.get_payload_size(packet)
-        return packet[UDPPacket.UDP_TOTAL_HEADER_SIZE:payload_size]
+        return packet[UDPPacket.UDP_TOTAL_HEADER_SIZE:(UDPPacket.UDP_TOTAL_HEADER_SIZE + payload_size)]

@@ -14,7 +14,7 @@ class ClientHandler:
         tcp_socket.bind(("", 0))
         tcp_socket.listen()
         while True:
-            connection, address = tcp_socket.accept
+            connection, address = tcp_socket.accept()
             client_thread = threading.Thread(target=self.new_client, args=(connection, address))
             break # just temporary
 
@@ -46,7 +46,8 @@ class ClientHandler:
 
                 if (response_type != PacketTypes.OK):
                     raise Exception("Authentication failed. Please try again.")
-
+                
+                break
             except socket.timeout:
                 print(f"Connection request has timed out, try again")
             except Exception as e:
