@@ -1,0 +1,15 @@
+[project]
+name = "BitTrickle"
+version = "0.1.0"
+description = "Default template for PDM package"
+authors = [
+    {name = "Connor Li", email = "z5425430@ad.unsw.edu.au"},
+]
+dependencies = []
+requires-python = ">=3.8"
+readme = "README.md"
+license = {text = "MIT"}
+
+
+[tool.pdm]
+distribution = false
