@@ -1,7 +1,7 @@
 import socket
 import threading
 from utils.Globals import Env, PacketTypes
-from utils.UDPHandler import UDPPacketHandling
+from utils.Networking.UDPHandler import UDPPacketHandling
 
 class ClientHandler:
     @staticmethod
@@ -46,6 +46,7 @@ class ClientHandler:
 
                 if (response_type != PacketTypes.OK):
                     raise Exception("Authentication failed. Please try again.")
+
             except socket.timeout:
                 print(f"Connection request has timed out, try again")
             except Exception as e:

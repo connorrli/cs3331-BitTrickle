@@ -2,7 +2,7 @@ import sys
 import socket
 from _thread import *
 from utils.Globals import Env
-from utils.ClientServerConnector import ClientHandler
+from utils.Networking.ClientServerConnector import ClientHandler
 
 # My package imports
 from utils.CommandHandler import CommandHandler

@@ -11,24 +11,28 @@ class UDPPacket:
     UDP_SRC_PORT_SIZE = 2
 
     # Destination port
-    UDP_DST_PORT_OFFSET = 2
+    UDP_DST_PORT_OFFSET = UDP_SRC_PORT_OFFSET + UDP_SRC_PORT_SIZE
     UDP_DST_PORT_SIZE = 2
 
     # Packet length
-    UDP_LENGTH_OFFSET = 4
+    UDP_LENGTH_OFFSET = UDP_DST_PORT_OFFSET + UDP_DST_PORT_SIZE
     UDP_LENGTH_SIZE = 2
 
     # Checksum
-    UDP_CHECKSUM_OFFSET = 6
+    UDP_CHECKSUM_OFFSET = UDP_LENGTH_OFFSET + UDP_LENGTH_SIZE
     UDP_CHECKSUM_SIZE = 2
 
     # Message type (HBT, AUTH etc.)
-    UDP_MESSAGE_TYPE_OFFSET = 8
+    UDP_MESSAGE_TYPE_OFFSET = UDP_CHECKSUM_OFFSET + UDP_CHECKSUM_SIZE
     UDP_MESSAGE_TYPE_SIZE = 2
 
     # Payload size
-    UDP_PAYLOAD_SIZE_OFFSET = 10
+    UDP_PAYLOAD_SIZE_OFFSET = UDP_MESSAGE_TYPE_OFFSET + UDP_MESSAGE_TYPE_SIZE
     UDP_PAYLOAD_SIZE_SIZE = 2
+
+    # Source IP
+    UDP_SRC_IP_OFFSET = UDP_PAYLOAD_SIZE_OFFSET + UDP_PAYLOAD_SIZE_SIZE
+    UDP_SRC_IP_SIZE = 4
 
     # Total header size
     UDP_TOTAL_HEADER_SIZE = UDP_SRC_PORT_SIZE
@@ -37,6 +41,7 @@ class UDPPacket:
     + UDP_CHECKSUM_SIZE
     + UDP_MESSAGE_TYPE_SIZE 
     + UDP_PAYLOAD_SIZE_SIZE
+    + UDP_SRC_IP_SIZE
 
 class UDPPacketHandling:
     @staticmethod
@@ -49,11 +54,13 @@ class UDPPacketHandling:
         length: int = UDPPacket.UDP_TOTAL_HEADER_SIZE + len(payload)
 
         # Structure: 2 bytes (H = short) per field in struct
-        header_no_checksum = struct.pack("!HHHHHH", src_port, dst_port, length, 0, message_type, len(payload))
+        header_no_checksum = struct.pack(
+            "!HHHHHHH", src_port, dst_port, length, 0, message_type, len(payload), socket.inet_aton(src_ip)
+        )
 
         checksum: int = UDPPacketHandling.get_checksum(src_ip, dst_ip, header_no_checksum + payload)
 
-        header_with_checksum = struct.pack("!HHHHHH", src_port, dst_port, length, checksum, message_type, len(payload))
+        header_with_checksum = struct.pack("!HHHHHHH", src_port, dst_port, length, checksum, message_type, len(payload))
 
         return header_with_checksum + payload
     
@@ -108,6 +115,12 @@ class UDPPacketHandling:
         return UDPPacketHandling._get_field_value(
             packet, UDPPacket.UDP_MESSAGE_TYPE_OFFSET, UDPPacket.UDP_MESSAGE_TYPE_SIZE
         )
+    
+    @staticmethod
+    def get_source_ip(packet: bytes) -> str:
+        return socket.inet_ntoa(UDPPacketHandling._get_field_value(
+            packet, UDPPacket.UDP_SRC_IP_OFFSET, UDPPacket.UDP_SRC_IP_SIZE
+        ))
     
     @staticmethod
     def get_payload(packet: bytes) -> bytes:
