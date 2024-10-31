@@ -69,7 +69,6 @@ class Authenticate:
         return credentials_dictionary
     
     def isValidLogin(self, username: str, password: str) -> bool:
-        print(repr(password))
         if self.credentials.get(username) == None:
             return False
         
