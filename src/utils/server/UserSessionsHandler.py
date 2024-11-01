@@ -1,40 +1,45 @@
-from threading import Timer
 import time
 import os
 
+class UserSession:
+    def __init__(self, user_ip: str):
+        self.last_active: time = time.time()
+        self.ip: str = user_ip
+    
+    def renew(self):
+        # HBT was sent after already expired, don't renew
+        if (self.is_active() != True):
+            return
+
+        self.last_active: time = time.time()
+    
+    def is_active(self):
+        if time.time() - self.last_active < 3:
+            return True
+        
+        return False
+
 class UserSessionsHandler:
-    active_sessions = dict()
+    # This is kinda gross, but if timers aren't stored in the sessions handler separately
+    # instead of within the session objects themselves, it becomes a hassle resetting the timer
+    # since it calls a method in this class
+    active_sessions: dict[str, UserSession] = dict()
 
     def generate_session(self, username: str, user_ip: str) -> None:
         if self.active_sessions.__contains__(username):
             raise Exception()
-        
-        newSession: UserSession = UserSession(user_ip, Timer(3, self.remove_session(username)))
-        self.active_sessions[username] = newSession
+
+        self.active_sessions[username] = UserSession(user_ip)
 
     def renew_session(self, username: str):
-        # If heartbeat received, but no longer active, drop packet?
-        # This behaviour doesn't seem to be mentioned in the spec
+        # If HBT sent but session doesn't exist for some reason, don't attempt renew
         if self.active_sessions.__contains__(username) != True:
             return
         
-        session: UserSession = self.active_sessions.get(username)
-
-        session.renew_timer()
+        self.active_sessions[username].renew()
 
     def remove_session(self, username: str):
         self.active_sessions.pop(username, None)
-
-
-class UserSession:
-    def __init__(self, user_sessions: UserSessionsHandler, user_ip: str, timer: Timer):
-        self.creator: UserSessionsHandler = user_sessions
-        self.last_active: time = time.time()
-        self.timer: Timer = timer
-        self.ip: str = user_ip
-    
-    def renew_timer(self):
-        self.last_active = time.time()
 
 class Authenticate:
     def __init__(self):
@@ -55,7 +60,7 @@ class Authenticate:
 
         credentials_list: list[str] = credentials.readlines()
 
-        credentials_dictionary: dict = dict()
+        credentials_dictionary: dict[str, str] = dict()
         for credential in credentials_list:
             # Credentials are stored as "John Password123", so sep on " "
             split = credential.strip().split(" ", 1)

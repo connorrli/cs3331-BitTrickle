@@ -19,3 +19,6 @@ class PacketTypes:
 class Env:
     CLIENT_IP = '127.0.0.1'
     SERVER_IP = '127.0.0.1'
+
+class Sessions:
+    INACTIVE_TIMEOUT = 3

@@ -2,10 +2,9 @@ import sys
 import socket
 
 # My package imports
-from utils.Globals import Env, PacketTypes
-from utils.Networking.UDPHandler import UDPPacketHandling
-from utils.UserSessionsHandler import Authenticate
-from utils.Logger import NetworkLogger
+from utils import Env, PacketTypes
+from utils.networking import UDPPacketHandling
+from utils.server import Authenticate, NetworkLogger
 
 server_port: int = int(sys.argv[1])
 if sys.argv.__len__() != 2 or sys.argv[1].isnumeric() != True:

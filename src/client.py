@@ -1,14 +1,14 @@
+# stdlib imports
 import sys
 import socket
 from _thread import *
-from utils.Globals import Env
-from utils.Networking.ClientServerConnector import ClientHandler
 
 # My package imports
-from utils.CommandHandler import CommandHandler
+from utils.client import CommandHandler
+from utils.networking import ClientHandler
 
 # Constants are the host and server port
-host = "127.0.0.1"
+host: str = "127.0.0.1"
 if sys.argv.__len__() != 2 or sys.argv[1].isnumeric() != True:
     print(f"Cannot run. Proper usage: python3 client.py <server_port>")
     exit()

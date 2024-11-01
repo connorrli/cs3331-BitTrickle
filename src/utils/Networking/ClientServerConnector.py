@@ -1,7 +1,7 @@
 import socket
 import threading
 from utils.Globals import Env, PacketTypes
-from utils.Networking.UDPHandler import UDPPacketHandling
+from utils.networking.UDPHandler import UDPPacketHandling
 
 class ClientHandler:
     @staticmethod
