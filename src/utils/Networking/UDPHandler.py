@@ -1,5 +1,8 @@
 import struct
 import socket
+import json
+from Exceptions import *
+from Globals import PacketTypes
 
 class UDPPacket:
     # The whole point of this class it to keep the structure of the UDP packet used
@@ -136,3 +139,48 @@ class UDPPacketHandling:
     def get_payload(packet: bytes) -> bytes:
         payload_size = UDPPacketHandling.get_payload_size(packet)
         return packet[UDPPacket.UDP_TOTAL_HEADER_SIZE:(UDPPacket.UDP_TOTAL_HEADER_SIZE + payload_size)]
+    
+    @staticmethod
+    def get_payload_string(packet: bytes):
+        payload: bytes = UDPPacketHandling.get_payload(packet)
+        return payload.decode("utf-8")
+    
+    @staticmethod
+    def get_payload_string_args(packet: bytes) -> list[str]:
+        payload: bytes = UDPPacketHandling.get_payload(packet)
+        return payload.decode("utf-8").split(",")
+    
+class UDPGetPacket:
+    @staticmethod
+    def create_packet(
+        src_ip: str, dst_ip: str, src_port: int, dst_port: int, filename: str
+    ):
+        UDPPacketHandling.create_udp_packet(
+            src_ip, dst_ip, src_port, dst_port, PacketTypes.GET, filename
+        )
+
+    @staticmethod
+    def get_data(packet: bytes):
+        args: list[str] = UDPPacketHandling.get_payload_string_args(packet)
+
+        return {
+            "filename": args[0]
+        }
+
+class UDPAuthPacket:
+    @staticmethod
+    def create_packet(
+        src_ip: str, dst_ip: str, src_port: int, dst_port: int, credentials: str
+    ):
+        UDPPacketHandling.create_udp_packet(
+            src_ip, dst_ip, src_port, dst_port, PacketTypes.AUTH, credentials
+        )
+    
+    @staticmethod
+    def get_data(packet: bytes):
+        args: list[str] = UDPPacketHandling.get_payload_string_args(packet)
+
+        return {
+            "username": args[0],
+            "password": args[1]
+        }

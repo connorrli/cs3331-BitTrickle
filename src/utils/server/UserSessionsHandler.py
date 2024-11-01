@@ -2,9 +2,9 @@ import time
 import os
 
 class UserSession:
-    def __init__(self, user_ip: str):
+    def __init__(self, address: tuple[str, int]):
         self.last_active: time = time.time()
-        self.ip: str = user_ip
+        self.address: str = address
     
     def renew(self):
         # HBT was sent after already expired, don't renew
@@ -25,11 +25,11 @@ class UserSessionsHandler:
     # since it calls a method in this class
     active_sessions: dict[str, UserSession] = dict()
 
-    def generate_session(self, username: str, user_ip: str) -> None:
+    def generate_session(self, username: str, user_address: tuple[str, int]) -> None:
         if self.active_sessions.__contains__(username):
             raise Exception()
 
-        self.active_sessions[username] = UserSession(user_ip)
+        self.active_sessions[username] = UserSession(user_address)
 
     def renew_session(self, username: str):
         # If HBT sent but session doesn't exist for some reason, don't attempt renew
