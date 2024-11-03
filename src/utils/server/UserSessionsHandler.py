@@ -1,45 +1,6 @@
 import time
 import os
-
-class UserSession:
-    def __init__(self, address: tuple[str, int]):
-        self.last_active: time = time.time()
-        self.address: str = address
-    
-    def renew(self):
-        # HBT was sent after already expired, don't renew
-        if (self.is_active() != True):
-            return
-
-        self.last_active: time = time.time()
-    
-    def is_active(self):
-        if time.time() - self.last_active < 3:
-            return True
-        
-        return False
-
-class UserSessionsHandler:
-    # This is kinda gross, but if timers aren't stored in the sessions handler separately
-    # instead of within the session objects themselves, it becomes a hassle resetting the timer
-    # since it calls a method in this class
-    active_sessions: dict[str, UserSession] = dict()
-
-    def generate_session(self, username: str, user_address: tuple[str, int]) -> None:
-        if self.active_sessions.__contains__(username):
-            raise Exception()
-
-        self.active_sessions[username] = UserSession(user_address)
-
-    def renew_session(self, username: str):
-        # If HBT sent but session doesn't exist for some reason, don't attempt renew
-        if self.active_sessions.__contains__(username) != True:
-            return
-        
-        self.active_sessions[username].renew()
-
-    def remove_session(self, username: str):
-        self.active_sessions.pop(username, None)
+from utils.Exceptions import *
 
 class Authenticate:
     def __init__(self):
@@ -66,7 +27,7 @@ class Authenticate:
             split = credential.strip().split(" ", 1)
 
             # All credentials will be valid, but still good practice I guess
-            if split.__len__() < 2:
+            if len(split) < 2:
                 continue
 
             credentials_dictionary[split[0]] = split[1]
@@ -81,3 +42,61 @@ class Authenticate:
             return False
         
         return True
+
+class UserSession:
+    def __init__(self, username: str, address: tuple[str, int]):
+        self.last_active: time = time.time()
+        self.username: str = username
+        self.address: str = address
+    
+    def renew(self):
+        # HBT was sent after already expired, don't renew
+        if (self.is_active() != True):
+            return
+
+        self.last_active: time = time.time()
+    
+    def is_active(self):
+        if time.time() - self.last_active < 3:
+            return True
+        
+        return False
+    
+    def get_username(self) -> str:
+        return self.username
+
+class UserSessionsHandler:
+    # This is kinda gross, but if timers aren't stored in the sessions handler separately
+    # instead of within the session objects themselves, it becomes a hassle resetting the timer
+    # since it calls a method in this class
+    def __init__(self):
+        self.active_sessions: dict[str | tuple[str, int], UserSession] = dict()
+        self.authenticator: Authenticate = Authenticate()
+
+    def generate_session(self, username: str, password: str, user_address: tuple[str, int]) -> None | UserAuthError:
+        if self.authenticator.isValidLogin(username, password) != True:
+            raise UserAuthError()
+
+        if self.active_sessions.__contains__(username):
+            if self.active_sessions[username].is_active():
+                raise UserAuthError()
+        
+        new_session: UserSession = UserSession(username, user_address)
+        self.active_sessions[username] = new_session
+        self.active_sessions[user_address] = new_session
+
+    def renew_session(self, username: str):
+        # If HBT sent but session doesn't exist for some reason, don't attempt renew
+        if self.active_sessions.__contains__(username) != True:
+            return
+        
+        self.active_sessions[username].renew()
+
+    def remove_session(self, username: str):
+        self.active_sessions.pop(username, None)
+    
+    def get_user_from_addr(self, addr: tuple[str, int]) -> str:
+        if self.active_sessions.get(addr) != True:
+            return "UNKNOWN"
+        
+        return self.active_sessions[addr].get_username()

@@ -4,8 +4,8 @@ import socket
 from _thread import *
 
 # My package imports
-from utils.client import CommandHandler
-from utils.networking import ClientHandler
+from utils.client.CommandHandler import CommandHandler
+from utils.networking.ClientServerConnector import ClientHandler
 
 # Constants are the host and server port
 host: str = "127.0.0.1"

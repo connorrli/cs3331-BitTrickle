@@ -6,3 +6,9 @@ class FileNotExistent(Exception):
 
 class CorruptPacketError(Exception):
     pass
+
+class InvalidPacketTypeError(Exception):
+    pass
+
+class UserAuthError(Exception):
+    pass
