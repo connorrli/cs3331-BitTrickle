@@ -4,7 +4,7 @@ build:
 	pdm install
 
 run-server:
-	python3 ./src/server.py 55111
+	python3 ./src/server.py 55222
 
 run-client:
-	python3 ./src/client.py 55111
+	python3 ./src/client.py 55222

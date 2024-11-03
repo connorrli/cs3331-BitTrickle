@@ -32,7 +32,7 @@ def main():
     while True:
         try:
             command: list[str] = CommandHandler.get_command()
-            CommandHandler.execute_command(command)
+            CommandHandler.execute_command(command, client_server_socket, server_port)
         except Exception as e:
             print(e)
             continue

@@ -1,7 +1,9 @@
 import socket
 import threading
+import time
+
 from utils.Globals import Env, PacketTypes
-from utils.networking.UDPHandler import UDPPacketHandling
+from utils.networking.UDPHandler import UDPPacketHandling, UDPPacket, UDPHbtPacket
 
 class ClientHandler:
     @staticmethod
@@ -17,6 +19,16 @@ class ClientHandler:
             connection, address = tcp_socket.accept()
             client_thread = threading.Thread(target=self.new_client, args=(connection, address))
             break # just temporary
+
+    def heart_beat_mechanism(socket: socket.socket, username: str, server_port: int):
+        while True:
+            time.sleep(2)
+            heart_beat_packet = UDPHbtPacket.create_packet(
+                Env.CLIENT_IP, Env.SERVER_IP, socket.getsockname()[1], server_port,
+                username
+            )
+
+            socket.sendto(heart_beat_packet, (Env.SERVER_IP, server_port))
 
     @staticmethod
     def connect_to_server(server_port: int) -> socket:
@@ -41,7 +53,7 @@ class ClientHandler:
             client_server_socket.sendto(payload, (Env.SERVER_IP, server_port))
 
             try:
-                response = client_server_socket.recvfrom(1024)[0]
+                response = client_server_socket.recvfrom(UDPPacket.UDP_PACKET_SIZE)[0]
                 response_type: int = UDPPacketHandling.get_message_type(response)
 
                 if (response_type != PacketTypes.OK):
@@ -52,5 +64,11 @@ class ClientHandler:
                 print(f"Connection request has timed out, try again")
             except Exception as e:
                 print(f"{e}")
+        
+        threading.Thread(
+            target=ClientHandler.heart_beat_mechanism,
+            args=(client_server_socket, username, server_port),
+            daemon=True
+        ).start()
         
         return client_server_socket

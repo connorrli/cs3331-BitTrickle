@@ -3,7 +3,7 @@ import socket
 
 # My package imports
 from utils.Globals import Env, PacketTypes
-from utils.networking.UDPHandler import UDPPacketHandling
+from utils.networking.UDPHandler import UDPPacketHandling, UDPPacket
 from utils.server import NetworkLogger, ServerPacketHandler
 from utils.Exceptions import *
 
@@ -18,7 +18,7 @@ def main():
     server_socket.bind((Env.SERVER_IP, server_port))
 
     while True:
-        data: bytes = server_socket.recv(1024)
+        data: bytes = server_socket.recv(UDPPacket.UDP_PACKET_SIZE)
         source_addr: tuple[str, int] = (UDPPacketHandling.get_source_ip(data), UDPPacketHandling.get_source_port(data))
         response: bytes = packet_handler.receive_packet(data)
         if response == None:

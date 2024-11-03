@@ -106,7 +106,12 @@ class UDPPacketHandling:
     @staticmethod
     def get_payload_string_args(packet: bytes) -> list[str]:
         payload: bytes = UDPPacketHandling.get_payload(packet)
-        return payload.decode("utf-8").split(",")
+
+        # Even if payload is empty, there will still be '' element without this
+        if payload.decode("utf-8") == '':
+            return []
+        else:
+            return payload.decode("utf-8").split(",")
 
 class UDPPacket:
     # The whole point of this class it to keep the structure of the UDP packet used
@@ -151,6 +156,10 @@ class UDPPacket:
         UDP_PAYLOAD_SIZE_SIZE + 
         UDP_SRC_IP_SIZE
     )
+
+    # UDP Packet Size
+    UDP_MAX_PAYLOAD_SIZE = 1024
+    UDP_PACKET_SIZE = UDP_MAX_PAYLOAD_SIZE + UDP_TOTAL_HEADER_SIZE
 
 # TYPED DICTS TO KEEP STRUCTURE OF UDP PACKET TYPES EASILY KNOWN AND CHANGED
 
@@ -220,7 +229,7 @@ class UDPGetPacket(UDPGenericPacket):
     def create_packet(
         src_ip: str, dst_ip: str, src_port: int, dst_port: int, filename: str
     ):
-        UDPPacketHandling.create_udp_packet(
+        return UDPPacketHandling.create_udp_packet(
             src_ip, dst_ip, src_port, dst_port, PacketTypes.GET, filename
         )
 
@@ -246,7 +255,7 @@ class UDPAuthPacket(UDPGenericPacket):
     def create_packet(
         src_ip: str, dst_ip: str, src_port: int, dst_port: int, credentials: str
     ):
-        UDPPacketHandling.create_udp_packet(
+        return UDPPacketHandling.create_udp_packet(
             src_ip, dst_ip, src_port, dst_port, PacketTypes.AUTH, credentials
         )
     
@@ -273,15 +282,15 @@ class UDPHbtPacket(UDPGenericPacket):
     def create_packet(
         src_ip: str, dst_ip: str, src_port: int, dst_port: int, username: str
     ):
-        UDPPacketHandling.create_udp_packet(
-            src_ip, dst_ip, src_port, dst_port, PacketTypes.HBT, username
+        return UDPPacketHandling.create_udp_packet(
+            src_ip, dst_ip, src_port, dst_port, PacketTypes.HBT, username.encode("utf-8")
         )
     
     @staticmethod
     def get_data(packet: bytes) -> UDPAuthPacketData | CorruptPacketError:
         args: list[str] = UDPPacketHandling.get_payload_string_args(packet)
 
-        if args.__len__() != UDPAuthPacket.NUM_ARGS:
+        if len(args) != UDPHbtPacket.NUM_ARGS:
             raise CorruptPacketError()
 
         return UDPAuthPacketData(

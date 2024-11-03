@@ -5,13 +5,15 @@ class PacketTypes:
     OK = 3
     ERR = 4
     GET = 5
+    LAP = 6
 
     _packet_names = {
         AUTH: "AUTH",
         HBT: "HBT",
         OK: "OK",
         ERR: "ERR",
-        GET: "GET"
+        GET: "GET",
+        LAP: "LAP"
     }
 
     @classmethod

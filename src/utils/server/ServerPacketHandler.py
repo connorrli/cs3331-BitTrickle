@@ -13,12 +13,18 @@ class ServerPacketHandler:
         self.server_port = server_port
 
     def receive_packet(self, packet: bytes):
-        try:    
+        try:
             message_type: int = UDPPacketHandling.get_message_type(packet)
             source_ip: str = UDPPacketHandling.get_source_ip(packet)
             source_port: int = UDPPacketHandling.get_source_port(packet)
 
             if message_type != PacketTypes.AUTH:
+                # If the user is no longer active, then return error (I guess?)
+                if self.users_handler.is_active_user(
+                    (source_ip, source_port)
+                ) != True:
+                    raise UserAuthError()
+
                 NetworkLogger.log_received_event(
                     message_type, 
                     source_port, 
@@ -32,11 +38,22 @@ class ServerPacketHandler:
                     return self.handle_auth(packet, (source_ip, source_port))
                 case PacketTypes.HBT:
                     return self.handle_hbt(packet)
+                case PacketTypes.LAP:
+                    return self.handle_lap(packet, (source_ip, source_port))
+
         except CorruptPacketError:
             # If for some reason the packet is invalid in some way, drop it
             return None
         except Exception:
             # For all other uncaught exceptions, return an ERR packet
+            NetworkLogger.log_sent_event(
+                PacketTypes.ERR, 
+                source_port, 
+                self.users_handler.get_user_from_addr(
+                    (source_ip, source_port)
+                )
+            )
+
             return UDPPacketHandling.create_udp_packet(
                 self.server_ip, source_ip, self.server_port, source_port, 
                 PacketTypes.ERR, "".encode("utf-8")
@@ -55,6 +72,12 @@ class ServerPacketHandler:
             self.users_handler.generate_session(data["username"], data["password"], src_address)
 
             # Successful authentication response
+            NetworkLogger.log_sent_event(
+                PacketTypes.OK, 
+                src_address[1], 
+                data['username']
+            )
+
             return UDPPacketHandling.create_udp_packet(
                 self.server_ip, src_address[0], self.server_port, src_address[1], 
                 PacketTypes.OK, "Welcome to BitTrickle!".encode("utf-8")
@@ -79,6 +102,23 @@ class ServerPacketHandler:
 
         return None
         
+    def handle_lap(self, packet: bytes, src_address: tuple[str, int]):
+        src_username: str = self.users_handler.get_user_from_addr(src_address)
+
+        active_users: list[str] = self.users_handler.get_active_users()
+        active_users.remove(src_username)
+
+        NetworkLogger.log_sent_event(
+                PacketTypes.OK, 
+                src_address[1], 
+                self.users_handler.get_user_from_addr(src_address)
+            )
+
+        return UDPPacketHandling.create_udp_packet(
+            self.server_ip, src_address[0], self.server_port, src_address[1],
+            PacketTypes.OK, ",".join(active_users).encode("utf-8")
+        )
+
 
 
         # AUTH has to be treated differently, because there's not yet any

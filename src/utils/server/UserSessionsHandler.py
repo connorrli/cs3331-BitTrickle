@@ -70,33 +70,55 @@ class UserSessionsHandler:
     # instead of within the session objects themselves, it becomes a hassle resetting the timer
     # since it calls a method in this class
     def __init__(self):
-        self.active_sessions: dict[str | tuple[str, int], UserSession] = dict()
+        self.user_sessions: dict[str | tuple[str, int], UserSession] = dict()
         self.authenticator: Authenticate = Authenticate()
 
     def generate_session(self, username: str, password: str, user_address: tuple[str, int]) -> None | UserAuthError:
         if self.authenticator.isValidLogin(username, password) != True:
             raise UserAuthError()
 
-        if self.active_sessions.__contains__(username):
-            if self.active_sessions[username].is_active():
+        if self.user_sessions.__contains__(username):
+            if self.user_sessions[username].is_active():
                 raise UserAuthError()
         
         new_session: UserSession = UserSession(username, user_address)
-        self.active_sessions[username] = new_session
-        self.active_sessions[user_address] = new_session
+        self.user_sessions[username] = new_session
+        self.user_sessions[user_address] = new_session
 
     def renew_session(self, username: str):
         # If HBT sent but session doesn't exist for some reason, don't attempt renew
-        if self.active_sessions.__contains__(username) != True:
+        if self.user_sessions[username] == None:
             return
         
-        self.active_sessions[username].renew()
+        self.user_sessions[username].renew()
 
     def remove_session(self, username: str):
-        self.active_sessions.pop(username, None)
-    
-    def get_user_from_addr(self, addr: tuple[str, int]) -> str:
-        if self.active_sessions.get(addr) != True:
-            return "UNKNOWN"
+        self.user_sessions.pop(username, None)
+
+    def is_active_user(self, src_address: tuple[str, int]) -> bool:
+        username = self.get_user_from_addr(src_address)
+
+        if (username == None):
+            return False
         
-        return self.active_sessions[addr].get_username()
+        if (
+            self.user_sessions[username] == None or
+            self.user_sessions[username].is_active() != True
+        ):
+            return False
+        
+        return True
+    
+    def get_user_from_addr(self, addr: tuple[str, int]) -> str | None:
+        if self.user_sessions.get(addr) == None:
+            return None
+        
+        return self.user_sessions[addr].get_username()
+    
+    def get_active_users(self) -> list[str]:
+        active_users: list[str] = []
+        for session in set(self.user_sessions.values()):
+            if session.is_active():
+                active_users.append(session.get_username())
+
+        return active_users
