@@ -19,7 +19,7 @@ class UserFilesHandler:
         if self.shared_files[filename] == None:
             raise FileNotExistent()
 
-        if self.is_sharer(username) != True:
+        if self.is_sharer(filename, username) != True:
             raise FileNotExistent()
         
         self.shared_files[filename].remove(username)

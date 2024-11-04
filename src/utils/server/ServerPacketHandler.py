@@ -44,14 +44,14 @@ class ServerPacketHandler:
                     return self.handle_pub(packet, (source_ip, source_port))
                 case PacketTypes.LPF:
                     return self.handle_lpf(packet, (source_ip, source_port))
+                case PacketTypes.UNP:
+                    return self.handle_unp(packet, (source_ip, source_port))
 
         except CorruptPacketError:
             # If for some reason the packet is invalid in some way, drop it
             return None
-        except Exception as e:
+        except Exception:
             # For all other uncaught exceptions, return an ERR packet
-            print(e)
-
             NetworkLogger.log_sent_event(
                 PacketTypes.ERR, 
                 source_port, 
@@ -162,6 +162,25 @@ class ServerPacketHandler:
             self.server_ip, src_address[0], 
             self.server_port, src_address[1],
             PacketTypes.OK, ",".join(shared_files).encode("utf-8")
+        )
+    
+    def handle_unp(self, packet: bytes, src_address: tuple[str, int]) -> bytes:
+        src_username: str = self.users_handler.get_user_from_addr(src_address)
+
+        data: UDPUnpPacketData = UDPUnpPacket.get_data(packet)
+
+        self.files_handler.remove_file(src_username, data["filename"])
+
+        NetworkLogger.log_sent_event(
+            PacketTypes.OK, 
+            src_address[1], 
+            self.users_handler.get_user_from_addr(src_address)
+        )
+
+        return UDPPacketHandling.create_udp_packet(
+            self.server_ip, src_address[0],
+            self.server_port, src_address[1],
+            PacketTypes.OK, "".encode("utf-8")
         )
 
 

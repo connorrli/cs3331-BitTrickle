@@ -184,6 +184,11 @@ class UDPPubPacketData(TypedDict):
 
     filename: str
 
+class UDPUnpPacketData(TypedDict):
+    """Class to define data structure of an AUTH packet"""
+
+    filename: str
+
 class UDPGenericPacket(ABC):
     """
      An abstract class inherited by all other UDP packet classes
@@ -233,7 +238,7 @@ class UDPGetPacket(UDPGenericPacket):
     @staticmethod
     def create_packet(
         src_ip: str, dst_ip: str, src_port: int, dst_port: int, filename: str
-    ):
+    ) -> bytes:
         return UDPPacketHandling.create_udp_packet(
             src_ip, dst_ip, src_port, dst_port, PacketTypes.GET, filename
         )
@@ -259,13 +264,13 @@ class UDPAuthPacket(UDPGenericPacket):
     @staticmethod
     def create_packet(
         src_ip: str, dst_ip: str, src_port: int, dst_port: int, credentials: str
-    ):
+    ) -> bytes:
         return UDPPacketHandling.create_udp_packet(
             src_ip, dst_ip, src_port, dst_port, PacketTypes.AUTH, credentials
         )
     
     @staticmethod
-    def get_data(packet: bytes) -> UDPAuthPacketData | CorruptPacketError:
+    def get_data(packet: bytes) -> UDPAuthPacketData:
         args: list[str] = UDPPacketHandling.get_payload_string_args(packet)
 
         if args.__len__() != UDPAuthPacket.NUM_ARGS:
@@ -286,13 +291,13 @@ class UDPHbtPacket(UDPGenericPacket):
     @staticmethod
     def create_packet(
         src_ip: str, dst_ip: str, src_port: int, dst_port: int, username: str
-    ):
+    ) -> bytes:
         return UDPPacketHandling.create_udp_packet(
             src_ip, dst_ip, src_port, dst_port, PacketTypes.HBT, username.encode("utf-8")
         )
     
     @staticmethod
-    def get_data(packet: bytes) -> UDPAuthPacketData | CorruptPacketError:
+    def get_data(packet: bytes) -> UDPAuthPacketData:
         args: list[str] = UDPPacketHandling.get_payload_string_args(packet)
 
         if len(args) != UDPHbtPacket.NUM_ARGS:
@@ -312,18 +317,44 @@ class UDPPubPacket(UDPGenericPacket):
     @staticmethod
     def create_packet(
         src_ip: str, dst_ip: str, src_port: int, dst_port: int, filename: str
-    ):
+    ) -> bytes:
         return UDPPacketHandling.create_udp_packet(
             src_ip, dst_ip, src_port, dst_port, PacketTypes.PUB, filename.encode("utf-8")
         )
     
     @staticmethod
-    def get_data(packet: bytes) -> UDPPubPacketData | CorruptPacketError:
+    def get_data(packet: bytes) -> UDPPubPacketData:
         args: list[str] = UDPPacketHandling.get_payload_string_args(packet)
 
         if len(args) != UDPPubPacket.NUM_ARGS:
             raise CorruptPacketError()
 
         return UDPPubPacketData(
+            filename=args[0]
+        )
+
+class UDPUnpPacket(UDPGenericPacket):
+    """
+     A class to create and parse UDP LPF packets
+    """
+
+    NUM_ARGS: int = len(UDPUnpPacketData.__annotations__)
+
+    @staticmethod
+    def create_packet(
+        src_ip: str, dst_ip: str, src_port: int, dst_port: int, filename: str
+    ) -> bytes:
+        return UDPPacketHandling.create_udp_packet(
+            src_ip, dst_ip, src_port, dst_port, PacketTypes.UNP, filename.encode("utf-8")
+        )
+    
+    @staticmethod
+    def get_data(packet: bytes) -> UDPUnpPacketData:
+        args: list[str] = UDPPacketHandling.get_payload_string_args(packet)
+
+        if len(args) != UDPUnpPacket.NUM_ARGS:
+            raise CorruptPacketError()
+
+        return UDPUnpPacketData(
             filename=args[0]
         )

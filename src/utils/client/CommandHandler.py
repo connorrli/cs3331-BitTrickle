@@ -31,6 +31,7 @@ class CommandHandler:
             case "unp":
                 if (command.__len__() != 2):
                     raise Exception(f"{invalid_cmd} unp <filename>")
+                CommandHandler.handle_unp(client_server_socket, server_address, command[1])
             case "xit":
                 if (command.__len__() != 1):
                     raise Exception(f"{invalid_cmd} xit")
@@ -117,7 +118,21 @@ class CommandHandler:
     
     @staticmethod
     def handle_unp(client_server_socket: socket.socket, server_address: tuple[str, int], filename: str):
-        
+        request: UDPUnpPacketData = UDPUnpPacket.create_packet(
+            client_server_socket.getsockname()[0], server_address[0], 
+            client_server_socket.getsockname()[1], server_address[1],
+            filename
+        )
+
+        client_server_socket.sendto(request, server_address)
+
+        response: bytes = client_server_socket.recv(UDPPacket.UDP_PACKET_SIZE)
+        message_type: int = UDPPacketHandling.get_message_type(response)
+
+        if message_type != PacketTypes.OK:
+            print(f"Unable to unpublish file. You may not have published it yet.")
+        else:
+            print(f"File unpublished successfully")
 
 
 
