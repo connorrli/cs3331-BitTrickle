@@ -1,9 +1,12 @@
 import socket
 import os
+import threading
+from pathlib import Path
 
 from utils.networking.UDPHandler import *
 from utils.Globals import PacketTypes
 from utils.client.FilesHandler import FilesHandler
+from utils.networking.TCPHandler import TCP
 
 class CommandHandler:
     @staticmethod
@@ -11,29 +14,30 @@ class CommandHandler:
         invalid_cmd: str = "Invalid command. Correct usage:"
         match command[0]:
             case "get":
-                if (command.__len__() != 2):
+                if (len(command) != 2):
                     raise Exception(f"{invalid_cmd} get <filename>")
+                CommandHandler.handle_get(client_server_socket, server_address, command[1])
             case "lap":
-                if (command.__len__() != 1):
+                if (len(command) != 1):
                     raise Exception(f"{invalid_cmd} lap")
                 CommandHandler.handle_lap(client_server_socket, server_address)
             case "lpf":
-                if (command.__len__() != 1):
+                if (len(command) != 1):
                     raise Exception(f"{invalid_cmd} lpf")
                 CommandHandler.handle_lpf(client_server_socket, server_address)
             case "pub":
-                if (command.__len__() != 2):
+                if (len(command) != 2):
                     raise Exception(f"{invalid_cmd} pub <filename>")
                 CommandHandler.handle_pub(client_server_socket, server_address, command[1])
             case "sch":
-                if (command.__len__() != 2):
+                if (len(command) != 2):
                     raise Exception(f"{invalid_cmd} sch")
             case "unp":
-                if (command.__len__() != 2):
+                if (len(command) != 2):
                     raise Exception(f"{invalid_cmd} unp <filename>")
                 CommandHandler.handle_unp(client_server_socket, server_address, command[1])
             case "xit":
-                if (command.__len__() != 1):
+                if (len(command) != 1):
                     raise Exception(f"{invalid_cmd} xit")
                 CommandHandler.handle_exit()
             case _:
@@ -53,6 +57,7 @@ class CommandHandler:
     
     @staticmethod
     def handle_exit():
+        print(f"Goodbye!")
         exit()
 
     @staticmethod
@@ -133,6 +138,67 @@ class CommandHandler:
             print(f"Unable to unpublish file. You may not have published it yet.")
         else:
             print(f"File unpublished successfully")
+    
+    def handle_get(client_server_socket: socket.socket, server_address: tuple[str, int], filename: str):
+        request: UDPGetPacketData = UDPGetPacket.create_packet(
+            client_server_socket.getsockname()[0], server_address[0], 
+            client_server_socket.getsockname()[1], server_address[1],
+            filename
+        )
+
+        client_server_socket.sendto(request, server_address)
+
+        response: bytes = client_server_socket.recv(UDPPacket.UDP_PACKET_SIZE)
+        message_type: int = UDPPacketHandling.get_message_type(response)
+
+        if message_type != PacketTypes.OK:
+            print(f"No copies of file with filename: {filename} found!")
+            return
+        
+        data: list[str] = UDPPacketHandling.get_payload_string_args(response)
+        sender_address = (data[0], int(data[1]))
+
+        transfer_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # Set time out as 5 seconds, don't want client hanging if sender goes offline
+        transfer_socket.settimeout(5)
+        transfer_socket.connect(sender_address)
+
+        transfer_socket.send(f"{filename}".encode("utf-8"))
+
+        # Daemon not set to true for this thread, because I'm assuming we should finish
+        # all transfers before exiting. This can be changed later.
+        threading.Thread(
+            target=CommandHandler.handle_get_transfer,
+            args=(transfer_socket, filename),
+        ).start()
+
+    def handle_get_transfer(connection: socket.socket, filename: str):
+        if Path(filename).exists():
+            print(f"File with this name already exists, cancelling file transfer")
+            connection.close()
+            return
+
+        f = open(f"{os.getcwd()}/{filename}", "wb")
+        while True:
+            try:
+                data = connection.recv(TCP.TCP_PACKET_SIZE)
+            except socket.timeout:
+                print(f"Connection timed out, cancelling file transfer.")
+                os.remove(filename)
+                connection.close()
+                return
+
+            if not data:
+                break
+
+            f.write(data)
+        
+        print(f"\n{filename} downloaded successfully!")
+        connection.close()
+
+
+
+        
 
 
 

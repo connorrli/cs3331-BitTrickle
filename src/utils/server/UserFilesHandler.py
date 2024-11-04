@@ -38,3 +38,13 @@ class UserFilesHandler:
         
 
         return published_files
+    
+    def get_file_sharers(self, filename: str) -> list[str]:
+        if self.shared_files[filename] == None:
+            raise FileNotExistent()
+        
+        if len(self.shared_files[filename]) <= 0:
+            raise FileNotExistent()
+        
+        # Return all sharers
+        return self.shared_files[filename]

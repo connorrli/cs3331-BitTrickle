@@ -12,3 +12,6 @@ class InvalidPacketTypeError(Exception):
 
 class UserAuthError(Exception):
     pass
+
+class NoActiveSharers(Exception):
+    pass

@@ -173,6 +173,7 @@ class UDPAuthPacketData(TypedDict):
 
     username: str
     password: str
+    listening_port: int
 
 class UDPHbtPacketData(TypedDict):
     """Class to define data structure of an AUTH packet"""
@@ -240,7 +241,7 @@ class UDPGetPacket(UDPGenericPacket):
         src_ip: str, dst_ip: str, src_port: int, dst_port: int, filename: str
     ) -> bytes:
         return UDPPacketHandling.create_udp_packet(
-            src_ip, dst_ip, src_port, dst_port, PacketTypes.GET, filename
+            src_ip, dst_ip, src_port, dst_port, PacketTypes.GET, filename.encode("utf-8")
         )
 
     @staticmethod
@@ -278,7 +279,8 @@ class UDPAuthPacket(UDPGenericPacket):
 
         return UDPAuthPacketData(
             username=args[0],
-            password=args[1]
+            password=args[1],
+            listening_port=int(args[2])
         )
 
 class UDPHbtPacket(UDPGenericPacket):

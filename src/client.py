@@ -5,7 +5,7 @@ from _thread import *
 
 # My package imports
 from utils.client.CommandHandler import CommandHandler
-from utils.networking.ClientServerConnector import ClientHandler
+from utils.networking.ClientServerConnector import ClientNetworkHandler
 from utils.Globals import Env
 
 # Constants are the host and server port
@@ -27,7 +27,7 @@ class PrintLogging:
         print("Wrong number of args given, try again!")
             
 def main():
-    client_server_socket: socket = ClientHandler.connect_to_server(server_port)
+    client_server_socket: socket = ClientNetworkHandler.connect_to_server(server_port)
 
     print(f"Welcome to BitTrickle!\nAvailable commands are: get, lap, lpf, pub, sch, unp, xit")
 

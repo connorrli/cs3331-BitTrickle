@@ -46,6 +46,8 @@ class ServerPacketHandler:
                     return self.handle_lpf(packet, (source_ip, source_port))
                 case PacketTypes.UNP:
                     return self.handle_unp(packet, (source_ip, source_port))
+                case PacketTypes.GET:
+                    return self.handle_get(packet, (source_ip, source_port))
 
         except CorruptPacketError:
             # If for some reason the packet is invalid in some way, drop it
@@ -76,7 +78,7 @@ class ServerPacketHandler:
         )
 
         try:
-            self.users_handler.generate_session(data["username"], data["password"], src_address)
+            self.users_handler.generate_session(data["username"], data["password"], data["listening_port"], src_address)
 
             # Successful authentication response
             NetworkLogger.log_sent_event(
@@ -182,6 +184,39 @@ class ServerPacketHandler:
             self.server_port, src_address[1],
             PacketTypes.OK, "".encode("utf-8")
         )
+    
+    def handle_get(self, packet: bytes, src_address: tuple[str, int]) -> bytes:
+        src_username: str = self.users_handler.get_user_from_addr(src_address)
+
+        data: UDPGetPacketData = UDPGetPacket.get_data(packet)
+
+        sharers: list[str] = self.files_handler.get_file_sharers(data["filename"])
+
+        selected_sharer: tuple[str, int] = None
+        for sharer in sharers:
+            listening_address: tuple[str, int] = self.users_handler.get_listening_address(sharer)
+            if listening_address == None:
+                continue
+
+            selected_sharer = listening_address
+            break
+
+        if selected_sharer == None:
+            raise NoActiveSharers()
+        
+        NetworkLogger.log_sent_event(
+            PacketTypes.OK, 
+            src_address[1], 
+            src_username
+        )
+
+        return UDPPacketHandling.create_udp_packet(
+            self.server_ip, src_address[0],
+            self.server_port, src_address[1],
+            PacketTypes.OK, f"{selected_sharer[0]},{selected_sharer[1]}".encode("utf-8")
+        )
+
+        
 
 
             

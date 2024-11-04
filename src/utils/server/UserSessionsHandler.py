@@ -44,10 +44,11 @@ class Authenticate:
         return True
 
 class UserSession:
-    def __init__(self, username: str, address: tuple[str, int]):
+    def __init__(self, username: str, address: tuple[str, int], listening_port: int):
         self.last_active: time = time.time()
         self.username: str = username
         self.address: str = address
+        self.listening_port = listening_port
     
     def renew(self):
         # HBT was sent after already expired, don't renew
@@ -73,7 +74,7 @@ class UserSessionsHandler:
         self.user_sessions: dict[str | tuple[str, int], UserSession] = dict()
         self.authenticator: Authenticate = Authenticate()
 
-    def generate_session(self, username: str, password: str, user_address: tuple[str, int]) -> None | UserAuthError:
+    def generate_session(self, username: str, password: str, port: int, user_address: tuple[str, int]) -> None | UserAuthError:
         if self.authenticator.isValidLogin(username, password) != True:
             raise UserAuthError()
 
@@ -81,7 +82,7 @@ class UserSessionsHandler:
             if self.user_sessions[username].is_active():
                 raise UserAuthError()
         
-        new_session: UserSession = UserSession(username, user_address)
+        new_session: UserSession = UserSession(username, user_address, port)
         self.user_sessions[username] = new_session
         self.user_sessions[user_address] = new_session
 
@@ -98,7 +99,7 @@ class UserSessionsHandler:
     def is_active_user(self, src_address: tuple[str, int]) -> bool:
         username = self.get_user_from_addr(src_address)
 
-        if (username == None):
+        if username == None:
             return False
         
         if (
@@ -122,3 +123,15 @@ class UserSessionsHandler:
                 active_users.append(session.get_username())
 
         return active_users
+    
+    def get_listening_address(self, username: str) -> None | int:
+        if (
+            self.user_sessions[username] == None or
+            self.user_sessions[username].is_active() != True
+        ):
+            return None
+
+        return (
+            self.user_sessions[username].address[0],
+            self.user_sessions[username].listening_port
+        )

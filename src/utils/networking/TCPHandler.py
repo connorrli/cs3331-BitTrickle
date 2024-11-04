@@ -1,0 +1,4 @@
+
+class TCP:
+    TCP_PACKET_SIZE = 1024
+    TCP_ENCODING_FORMAT = "utf-8"
