@@ -2,7 +2,7 @@ import socket
 import os
 
 from utils.networking.UDPHandler import *
-from utils.Globals import Env, PacketTypes
+from utils.Globals import PacketTypes
 from utils.client.FilesHandler import FilesHandler
 
 class CommandHandler:
@@ -20,13 +20,12 @@ class CommandHandler:
             case "lpf":
                 if (command.__len__() != 1):
                     raise Exception(f"{invalid_cmd} lpf")
+                CommandHandler.handle_lpf(client_server_socket, server_address)
             case "pub":
                 if (command.__len__() != 2):
                     raise Exception(f"{invalid_cmd} pub <filename>")
                 CommandHandler.handle_pub(client_server_socket, server_address, command[1])
             case "sch":
-                # For this one, I'm not sure if this is going to work because it depends
-                # on what the substring looks like. I might have to rethink my approach
                 if (command.__len__() != 2):
                     raise Exception(f"{invalid_cmd} sch")
             case "unp":
@@ -96,5 +95,29 @@ class CommandHandler:
             print(f"Unable to publish file, you may have already published it.")
         else:
             print(f"File published successfully")
+    
+    @staticmethod
+    def handle_lpf(client_server_socket: socket.socket, server_address: tuple[str, int]):
+        request: bytes = UDPPacketHandling.create_udp_packet(
+            client_server_socket.getsockname()[0], server_address[0], 
+            client_server_socket.getsockname()[1], server_address[1],
+            PacketTypes.LPF, "".encode("utf-8")
+        )
+
+        client_server_socket.sendto(request, server_address)
+
+        response: bytes = client_server_socket.recv(UDPPacket.UDP_PACKET_SIZE)
+        published_files: list[str] = UDPPacketHandling.get_payload_string_args(response)
+
+        if len(published_files) <= 0:
+            print("No files published")
+        else:
+            print(f"{len(published_files)} file{'s' if len(published_files) != 1 else ''} published:")
+            print(f"\n".join(published_files))
+    
+    @staticmethod
+    def handle_unp(client_server_socket: socket.socket, server_address: tuple[str, int], filename: str):
+        
+
 
 

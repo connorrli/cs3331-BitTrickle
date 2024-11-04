@@ -29,3 +29,12 @@ class UserFilesHandler:
             return False
         
         return True
+    
+    def get_shared_by(self, username: str) -> list[str]:
+        published_files: list[str] = []
+        for file, sharers in self.shared_files.items():
+            if username in sharers:
+                published_files.append(file)
+        
+
+        return published_files

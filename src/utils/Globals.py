@@ -1,5 +1,7 @@
 class PacketTypes:
-    # TYPES OF PACKETS
+    # TYPES OF PACKETS, CAN REPRESENT UP TO 2^16 DIFFERENT TYPES.
+    # IF NUMBER OF TYPES BECOMES DISGUSTING TO TRACK HERE, CAN ALWAYS
+    # FIND A NEW WAY TO DO THIS.
     AUTH = 1
     HBT = 2
     OK = 3
@@ -7,6 +9,8 @@ class PacketTypes:
     GET = 5
     LAP = 6
     PUB = 7
+    LPF = 8
+    UNP = 9
 
     _packet_names = {
         AUTH: "AUTH",
@@ -15,7 +19,9 @@ class PacketTypes:
         ERR: "ERR",
         GET: "GET",
         LAP: "LAP",
-        PUB: "PUB"
+        PUB: "PUB",
+        LPF: "LPF",
+        UNP: "UNP"
     }
 
     @classmethod
