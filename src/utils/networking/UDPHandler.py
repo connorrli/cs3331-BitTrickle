@@ -179,6 +179,11 @@ class UDPHbtPacketData(TypedDict):
 
     username: str
 
+class UDPPubPacketData(TypedDict):
+    """Class to define data structure of an AUTH packet"""
+
+    filename: str
+
 class UDPGenericPacket(ABC):
     """
      An abstract class inherited by all other UDP packet classes
@@ -295,4 +300,30 @@ class UDPHbtPacket(UDPGenericPacket):
 
         return UDPAuthPacketData(
             username=args[0]
+        )
+
+class UDPPubPacket(UDPGenericPacket):
+    """
+     A class to create and parse UDP PUB packets
+    """
+
+    NUM_ARGS: int = len(UDPPubPacketData.__annotations__)
+
+    @staticmethod
+    def create_packet(
+        src_ip: str, dst_ip: str, src_port: int, dst_port: int, filename: str
+    ):
+        return UDPPacketHandling.create_udp_packet(
+            src_ip, dst_ip, src_port, dst_port, PacketTypes.PUB, filename.encode("utf-8")
+        )
+    
+    @staticmethod
+    def get_data(packet: bytes) -> UDPPubPacketData | CorruptPacketError:
+        args: list[str] = UDPPacketHandling.get_payload_string_args(packet)
+
+        if len(args) != UDPPubPacket.NUM_ARGS:
+            raise CorruptPacketError()
+
+        return UDPPubPacketData(
+            filename=args[0]
         )

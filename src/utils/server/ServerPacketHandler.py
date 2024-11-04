@@ -40,6 +40,8 @@ class ServerPacketHandler:
                     return self.handle_hbt(packet)
                 case PacketTypes.LAP:
                     return self.handle_lap(packet, (source_ip, source_port))
+                case PacketTypes.PUB:
+                    return self.handle_pub(packet, (source_ip, source_port))
 
         except CorruptPacketError:
             # If for some reason the packet is invalid in some way, drop it
@@ -55,7 +57,8 @@ class ServerPacketHandler:
             )
 
             return UDPPacketHandling.create_udp_packet(
-                self.server_ip, source_ip, self.server_port, source_port, 
+                self.server_ip, source_ip, 
+                self.server_port, source_port, 
                 PacketTypes.ERR, "".encode("utf-8")
             )
     
@@ -64,7 +67,7 @@ class ServerPacketHandler:
 
         NetworkLogger.log_received_event(
             PacketTypes.AUTH, 
-            src_address[0], 
+            src_address[1], 
             data["username"]
         )
 
@@ -92,7 +95,8 @@ class ServerPacketHandler:
             )
 
             return UDPPacketHandling.create_udp_packet(
-                self.server_ip, src_address[0], self.server_port, src_address[1], 
+                self.server_ip, src_address[0], 
+                self.server_port, src_address[1], 
                 PacketTypes.ERR, "".encode("utf-8")
             )
         
@@ -109,17 +113,35 @@ class ServerPacketHandler:
         active_users.remove(src_username)
 
         NetworkLogger.log_sent_event(
-                PacketTypes.OK, 
-                src_address[1], 
-                self.users_handler.get_user_from_addr(src_address)
-            )
-
-        return UDPPacketHandling.create_udp_packet(
-            self.server_ip, src_address[0], self.server_port, src_address[1],
-            PacketTypes.OK, ",".join(active_users).encode("utf-8")
+            PacketTypes.OK, 
+            src_address[1], 
+            self.users_handler.get_user_from_addr(src_address)
         )
 
+        return UDPPacketHandling.create_udp_packet(
+            self.server_ip, src_address[0], 
+            self.server_port, src_address[1],
+            PacketTypes.OK, ",".join(active_users).encode("utf-8")
+        )
+    
+    def handle_pub(self, packet: bytes, src_address: tuple[str, int]):
+        src_username: str = self.users_handler.get_user_from_addr(src_address)
 
+        data : UDPPubPacketData = UDPPubPacket.get_data(packet)
+
+        self.files_handler.add_file(src_username, data["filename"])
+        
+        NetworkLogger.log_sent_event(
+            PacketTypes.OK, 
+            src_address[1], 
+            self.users_handler.get_user_from_addr(src_address)
+        )
+
+        return UDPPacketHandling.create_udp_packet(
+            self.server_ip, src_address[0],
+            self.server_port, src_address[1],
+            PacketTypes.OK, "".encode("utf-8")
+        )
 
         # AUTH has to be treated differently, because there's not yet any
         # session, so can't fetch the username from the sessions

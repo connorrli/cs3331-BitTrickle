@@ -4,27 +4,28 @@ class UserFilesHandler:
     def __init__(self) -> None:
         self.shared_files: dict[str, list[str]] = dict()
     
-    def add_file(self, username: str, filename: str) -> None | FileAlreadyPublished:
-        # If user hasn't shared any files, create new list with filename in it
-        if self.shared_files.get(username) == None:
-            self.shared_files[username] = [filename]
-            return
+    def add_file(self, username: str, filename: str) -> None | FileAlreadyPublished:    
+        # If file hasn't been shared before, create list for it
+        if self.shared_files.get(filename) == None:
+            self.shared_files[filename] = []
         
         # If user already sharing file, raise exception
-        if self.shared_files[username].__contains__(filename):
+        if self.is_sharer(filename, username):
             raise FileAlreadyPublished()
         
-        self.shared_files[username].append(filename)
+        self.shared_files[filename].append(username)
 
     def remove_file(self, username: str, filename: str) -> None | FileNotExistent:
+        if self.shared_files[filename] == None:
+            raise FileNotExistent()
+
         if self.is_sharer(username) != True:
             raise FileNotExistent()
         
-        if self.shared_files.pop(filename, None) == None:
-            raise FileNotExistent()
+        self.shared_files[filename].remove(username)
 
-    def is_sharer(self, username: str) -> bool:
-        if self.shared_files.get(username) == None:
+    def is_sharer(self, filename: str, username: str) -> bool:
+        if self.shared_files[filename].count(username) <= 0:
             return False
         
         return True

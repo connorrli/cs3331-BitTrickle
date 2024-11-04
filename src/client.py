@@ -6,6 +6,7 @@ from _thread import *
 # My package imports
 from utils.client.CommandHandler import CommandHandler
 from utils.networking.ClientServerConnector import ClientHandler
+from utils.Globals import Env
 
 # Constants are the host and server port
 host: str = "127.0.0.1"
@@ -13,6 +14,7 @@ if sys.argv.__len__() != 2 or sys.argv[1].isnumeric() != True:
     print(f"Cannot run. Proper usage: python3 client.py <server_port>")
     exit()
 
+server_ip: str = Env.SERVER_IP
 server_port: int = int(sys.argv[1])
 
 class PrintLogging:
@@ -32,7 +34,7 @@ def main():
     while True:
         try:
             command: list[str] = CommandHandler.get_command()
-            CommandHandler.execute_command(command, client_server_socket, server_port)
+            CommandHandler.execute_command(command, client_server_socket, (server_ip, server_port))
         except Exception as e:
             print(e)
             continue
