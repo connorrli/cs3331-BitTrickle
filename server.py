@@ -39,10 +39,12 @@ def main():
         except CorruptPacketError:
             response: bytes = None
         except Exception:
+            username: str = users_handler.get_user_from_addr((source_address[0], source_address[1]))
+            target: str = f"{source_address[0]}:{source_address[1]}" if username == None else username
             NetworkLogger.log_sent_event(
                 PacketTypes.ERR, 
                 source_address[1], 
-                users_handler.get_user_from_addr(source_address)
+                target
             )
 
             response: bytes = UDPPacketHandling.create_udp_packet(
