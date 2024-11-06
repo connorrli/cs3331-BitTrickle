@@ -39,8 +39,6 @@ def main():
         except CorruptPacketError:
             response: bytes = None
         except Exception as e:
-            print(e)
-
             NetworkLogger.log_sent_event(
                 PacketTypes.ERR, 
                 source_address[1], 
