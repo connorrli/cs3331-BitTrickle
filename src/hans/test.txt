@@ -1,1 +1,0 @@
-This is a small text file for testing file transfer stuff in BitTrickle!

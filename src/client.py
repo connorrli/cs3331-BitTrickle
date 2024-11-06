@@ -1,14 +1,11 @@
-# stdlib imports
 import sys
 import socket
-from _thread import *
 
-# My package imports
 from utils.client.CommandHandler import CommandHandler
 from utils.networking.ClientServerConnector import ClientNetworkHandler
 from utils.Globals import Env
 
-# Constants are the host and server port
+# Constants
 host: str = "127.0.0.1"
 if sys.argv.__len__() != 2 or sys.argv[1].isnumeric() != True:
     print(f"Cannot run. Proper usage: python3 client.py <server_port>")
@@ -16,15 +13,6 @@ if sys.argv.__len__() != 2 or sys.argv[1].isnumeric() != True:
 
 server_ip: str = Env.SERVER_IP
 server_port: int = int(sys.argv[1])
-
-class PrintLogging:
-    @staticmethod
-    def invalid_input():
-        print("Invalid input, try again!")
-
-    @staticmethod
-    def invalid_num_args():
-        print("Wrong number of args given, try again!")
             
 def main():
     client_server_socket: socket = ClientNetworkHandler.connect_to_server(server_port)

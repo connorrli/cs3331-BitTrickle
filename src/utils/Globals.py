@@ -11,6 +11,7 @@ class PacketTypes:
     PUB = 7
     LPF = 8
     UNP = 9
+    SCH = 10
 
     _packet_names = {
         AUTH: "AUTH",
@@ -21,7 +22,8 @@ class PacketTypes:
         LAP: "LAP",
         PUB: "PUB",
         LPF: "LPF",
-        UNP: "UNP"
+        UNP: "UNP",
+        SCH: "SCH"
     }
 
     @classmethod

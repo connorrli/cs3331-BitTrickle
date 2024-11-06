@@ -1,6 +1,4 @@
 import os
-from collections.abc import Iterator
-from utils.networking.TCPHandler import TCP
 
 class FilesHandler:
     @staticmethod

@@ -48,3 +48,11 @@ class UserFilesHandler:
         
         # Return all sharers
         return self.shared_files[filename]
+    
+    def get_matching(self, substring: str) -> list[str]:
+        matching_files: list[str] = []
+        for filename in self.shared_files.keys():
+            if substring in filename:
+                matching_files.append(filename)
+        
+        return matching_files

@@ -190,6 +190,11 @@ class UDPUnpPacketData(TypedDict):
 
     filename: str
 
+class UDPSchPacketData(TypedDict):
+    """Class to define data structure of an SCH packet"""
+
+    substring: str
+
 class UDPGenericPacket(ABC):
     """
      An abstract class inherited by all other UDP packet classes
@@ -359,4 +364,30 @@ class UDPUnpPacket(UDPGenericPacket):
 
         return UDPUnpPacketData(
             filename=args[0]
+        )
+
+class UDPSchPacket(UDPGenericPacket):
+    """
+     A class to create and parse UDP SCH packets
+    """
+
+    NUM_ARGS: int = len(UDPSchPacketData.__annotations__)
+
+    @staticmethod
+    def create_packet(
+        src_ip: str, dst_ip: str, src_port: int, dst_port: int, substring: str
+    ) -> bytes:
+        return UDPPacketHandling.create_udp_packet(
+            src_ip, dst_ip, src_port, dst_port, PacketTypes.SCH, substring.encode("utf-8")
+        )
+
+    @staticmethod
+    def get_data(packet: bytes) -> UDPSchPacketData:
+        args: list[str] = UDPPacketHandling.get_payload_string_args(packet)
+
+        if args.__len__() != UDPSchPacket.NUM_ARGS:
+            raise CorruptPacketError()
+
+        return UDPSchPacketData(
+            substring=args[0]
         )

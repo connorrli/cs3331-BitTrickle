@@ -32,6 +32,7 @@ class CommandHandler:
             case "sch":
                 if (len(command) != 2):
                     raise Exception(f"{invalid_cmd} sch")
+                CommandHandler.handle_sch(client_server_socket, server_address, command[1])
             case "unp":
                 if (len(command) != 2):
                     raise Exception(f"{invalid_cmd} unp <filename>")
@@ -123,7 +124,7 @@ class CommandHandler:
     
     @staticmethod
     def handle_unp(client_server_socket: socket.socket, server_address: tuple[str, int], filename: str):
-        request: UDPUnpPacketData = UDPUnpPacket.create_packet(
+        request: bytes = UDPUnpPacket.create_packet(
             client_server_socket.getsockname()[0], server_address[0], 
             client_server_socket.getsockname()[1], server_address[1],
             filename
@@ -138,7 +139,8 @@ class CommandHandler:
             print(f"Unable to unpublish file. You may not have published it yet.")
         else:
             print(f"File unpublished successfully")
-    
+
+    @staticmethod
     def handle_get(client_server_socket: socket.socket, server_address: tuple[str, int], filename: str):
         request: UDPGetPacketData = UDPGetPacket.create_packet(
             client_server_socket.getsockname()[0], server_address[0], 
@@ -172,11 +174,14 @@ class CommandHandler:
             args=(transfer_socket, filename),
         ).start()
 
+    @staticmethod
     def handle_get_transfer(connection: socket.socket, filename: str):
         if Path(filename).exists():
             print(f"File with this name already exists, cancelling file transfer")
             connection.close()
             return
+        
+        
 
         f = open(f"{os.getcwd()}/{filename}", "wb")
         while True:
@@ -196,8 +201,26 @@ class CommandHandler:
         print(f"\n{filename} downloaded successfully!")
         connection.close()
 
+    @staticmethod
+    def handle_sch(
+        client_server_socket: socket.socket, server_address: tuple[str, int], substring: str
+    ):
+        request: bytes = UDPSchPacket.create_packet(
+            client_server_socket.getsockname()[0], server_address[0], 
+            client_server_socket.getsockname()[1], server_address[1],
+            substring
+        )
 
+        client_server_socket.sendto(request, server_address)
+        response: bytes = client_server_socket.recv(UDPPacket.UDP_PACKET_SIZE)
 
+        matching_files: list[str] = UDPPacketHandling.get_payload_string_args(response)
+
+        if len(matching_files) <= 0:
+            print("No files published containing that substring in its name.")
+        else:
+            print(f"{len(matching_files)} file{'s' if len(matching_files) != 1 else ''} found:")
+            print(f"\n".join(matching_files))
         
 
 
